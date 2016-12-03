@@ -76,6 +76,11 @@
     <Compile Include="FixTrans2.cs" />
     <Compile Include="FixVec3.cs" />
     <Compile Include="FixTrans3.cs" />
+    <Compile Include="Ext\FixBounds.cs" />
+    <Compile Include="Ext\FixQuaternion.cs" />
+    <Compile Include="Ext\FixRay.cs" />
+    <Compile Include="Ext\FixRect.cs" />
+    <Compile Include="Ext\FixUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

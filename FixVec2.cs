@@ -24,6 +24,7 @@
 using System;
 
 namespace FixedPointy {
+	[Serializable]
 	public struct FixVec2 {
 		public static readonly FixVec2 Zero = new FixVec2();
 		public static readonly FixVec2 One = new FixVec2(1, 1);
@@ -63,7 +64,15 @@ namespace FixedPointy {
 			return new FixVec2(lhs._x / rhs, lhs._y / rhs);
 		}
 
-		Fix _x, _y;
+		#if UNITY_5
+		[UnityEngine.SerializeField]
+		#endif
+		Fix _x;
+
+		#if UNITY_5
+		[UnityEngine.SerializeField]
+		#endif
+		Fix _y;
 
 		public FixVec2 (Fix x, Fix y) {
 			_x = x;
@@ -88,7 +97,32 @@ namespace FixedPointy {
 			return new FixVec2(_x * value, _y * value);
 		}
 
+		public FixVec3 WithX(Fix x)
+		{
+			return new FixVec2(x, _y);
+		}
+
+		public FixVec3 WithY(Fix y)
+		{
+			return new FixVec2(_x, y);
+		}
+
+		public Fix GetSqrMagnitude()
+		{
+			if (X == Fix.Zero && Y == Fix.Zero)
+			{
+				return Fix.Zero;
+			}
+			
+			return Dot(this);
+		}
+
 		public Fix GetMagnitude () {
+			if (X == Fix.Zero && Y == Fix.Zero)
+			{
+				return Fix.Zero;
+			}
+
 			ulong N = (ulong)((long)_x.Raw * (long)_x.Raw + (long)_y.Raw * (long)_y.Raw);
 
 			return new Fix((int)(FixMath.SqrtULong(N << 2) + 1) >> 1);
@@ -99,11 +133,22 @@ namespace FixedPointy {
 				return FixVec2.Zero;
 
 			var m = GetMagnitude();
+			if (m == Fix.Zero)
+			{
+				// Magnitude was too small for fixed precision, approximate with a 0-length vector
+				return FixVec2.Zero;
+			}
+			
 			return new FixVec2(_x / m, _y / m);
 		}
 
 		public override string ToString () {
 			return string.Format("({0}, {1})", _x, _y);
+		}
+
+		public FixVec3 WithXYAsXZ()
+		{
+			return new FixVec3(_x, 0, _y);
 		}
 	}
 }

@@ -22,15 +22,18 @@
  */
 
 using System;
-using System.Linq;
 
 namespace FixedPointy {
 	public static partial class FixMath {
 		public static readonly Fix PI;
 		public static readonly Fix E;
-		static Fix _log2_E;
+		public static readonly Fix Rad2Deg;
+		public static readonly Fix Deg2Rad;
+		public static readonly Fix _log2_E;
+        public static readonly FixConst Half = 0.5f;
+        public static readonly Fix Infinity = new Fix(0x7F800000); // Susan?  Arbitrary?
 		static Fix _log2_10;
-		static Fix _ln2;
+		public static readonly Fix _ln2;
 		static Fix _log10_2;
 		static Fix[] _quarterSine;
 		static Fix[] _cordicAngles;
@@ -52,6 +55,9 @@ namespace FixedPointy {
 			_quarterSine = Array.ConvertAll(_quarterSineConsts, c => (Fix)c);
 			_cordicAngles = Array.ConvertAll(_cordicAngleConsts, c => (Fix)c);
 			_cordicGains = Array.ConvertAll(_cordicGainConsts, c => (Fix)c);
+
+			Rad2Deg = (Fix)360 / PI / (Fix)2;
+			Deg2Rad = PI * (Fix)2 / (Fix)360;
 		}
 
 		public static Fix Abs (Fix value) {
@@ -92,6 +98,35 @@ namespace FixedPointy {
 
 		public static Fix Max (Fix v1, Fix v2) {
 			return v1 > v2 ? v1 : v2;
+		}
+
+		public static Fix Clamp(Fix value, Fix min, Fix max)
+		{
+			if (value < min)
+			{
+				value = min;
+			}
+			else
+			{
+				if (value > max)
+				{
+					value = max;
+				}
+			}
+			return value;
+		}
+
+		public static Fix Clamp01(Fix value)
+		{
+			if (value < Fix.Zero)
+			{
+				return Fix.Zero;
+			}
+			if (value > Fix.One)
+			{
+				return Fix.One;
+			}
+			return value;
 		}
 
 		public static Fix Sqrt (Fix value) {
@@ -166,10 +201,18 @@ namespace FixedPointy {
 		}
 
 		public static Fix Asin (Fix value) {
+			if (value < -Fix.One || value > Fix.One)
+			{
+				return Fix.Zero;
+			}
 			return Atan2(value, Sqrt((1 + value) * (1 - value)));
 		}
 
 		public static Fix Acos (Fix value) {
+			if (value < -Fix.One || value > Fix.One)
+			{
+				return Fix.Zero;
+			}
 			return Atan2(Sqrt((1 + value) * (1 - value)), value);
 		}
 

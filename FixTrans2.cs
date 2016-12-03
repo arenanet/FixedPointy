@@ -71,6 +71,30 @@ namespace FixedPointy {
 			);
 		}
 
+		public FixVec2 Position
+		{
+			get
+			{
+				return new FixVec2(_m13, _m23);
+			}
+			set
+			{
+				_m13 = value.X;
+				_m23 = value.Y;
+			}
+		}
+
+		public FixTrans2 Transpose
+		{
+			get
+			{
+				return new FixTrans2(
+					M11, M21, M22, 
+					M12, M13, M23
+				);
+			}
+		}
+
 		Fix _m11, _m21, _m12, _m22, _m13, _m23;
 
 		public FixTrans2 (

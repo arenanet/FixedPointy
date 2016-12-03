@@ -25,7 +25,8 @@ using System;
 using System.Text;
 
 namespace FixedPointy {
-	public struct Fix {
+	[Serializable]
+	public struct Fix : IComparable {
 		internal const int FRACTIONAL_BITS = 16;
 
 		internal const int INTEGER_BITS = sizeof(int) * 8 - FRACTIONAL_BITS;
@@ -39,7 +40,7 @@ namespace FixedPointy {
 		public static readonly Fix One = new Fix(FRACTION_RANGE);
 		public static readonly Fix MinValue = new Fix(int.MinValue);
 		public static readonly Fix MaxValue = new Fix(int.MaxValue);
-		public static readonly Fix Epsilon = new Fix(1);
+		public static readonly Fix Epsilon = Fix.Ratio(1, 10000000);
 
 		static Fix () {
 			if (FRACTIONAL_BITS < 8)
@@ -124,19 +125,62 @@ namespace FixedPointy {
 		}
 
 		public static Fix operator + (Fix lhs, Fix rhs) {
-			return new Fix(lhs._raw + rhs._raw);
+			Fix result = new Fix(lhs._raw + rhs._raw);
+			float exactResult = (float)lhs + (float)rhs;
+			return ClampedValue(result, exactResult);
 		}
 
 		public static Fix operator - (Fix lhs, Fix rhs) {
-			return new Fix(lhs._raw - rhs._raw);
+			Fix result = new Fix(lhs._raw - rhs._raw);
+			float exactResult = (float)lhs - (float)rhs;
+			return ClampedValue(result, exactResult);
 		}
 
 		public static Fix operator * (Fix lhs, Fix rhs) {
-			return new Fix((int)(((long)lhs._raw * (long)rhs._raw + (FRACTION_RANGE >> 1)) >> FRACTIONAL_BITS));
+			Fix result = new Fix((int)(((long)lhs._raw * (long)rhs._raw + (FRACTION_RANGE >> 1)) >> FRACTIONAL_BITS));
+			float exactResult = (float)lhs * (float)rhs;
+			return ClampedValue(result, exactResult);
 		}
 
 		public static Fix operator / (Fix lhs, Fix rhs) {
-			return new Fix((int)((((long)lhs._raw << (FRACTIONAL_BITS + 1)) / (long)rhs._raw + 1) >> 1));
+            if (rhs == Fix.Zero)
+            {
+                if (lhs >= Fix.Zero)
+                {
+                    return FixMath.Infinity;
+                }
+
+                return -FixMath.Infinity;
+            }
+			
+			Fix result = new Fix((int)((((long)lhs._raw << (FRACTIONAL_BITS + 1)) / (long)rhs._raw + 1) >> 1));
+			float exactResult = (float)lhs / (float)rhs;
+			return ClampedValue(result, exactResult);
+		}
+
+		private static Fix ClampedValue(Fix naturalResult, float exactResult)
+		{
+			// TODO: SUSAN: once all integer overflows are solved, remove the floating point math and exception throwing
+            float approxError = Math.Abs((float)naturalResult - exactResult);
+            if (approxError > 0.1f)
+            {
+                //string exceptionMessage = string.Format("Bad multiply of {0} and {1} produced the result {2}",
+                //                (float)lhs, (float)rhs, (float)result);
+				//UnityEngine.Debug.LogError(exceptionMessage);
+                //throw new Exception(exceptionMessage);
+
+				// TODO - FIX THIS!!!
+				if (exactResult < 0)
+				{
+					return MinValue;
+				}
+				else
+				{
+					return MaxValue;
+				}
+            }
+
+            return naturalResult;
 		}
 
 		public static Fix operator % (Fix lhs, Fix rhs) {
@@ -151,6 +195,9 @@ namespace FixedPointy {
 			return new Fix(lhs.Raw >> rhs);
 		}
 
+		#if UNITY_5
+		[UnityEngine.SerializeField]
+		#endif
 		int _raw;
 
 		public Fix (int raw) {
@@ -187,5 +234,10 @@ namespace FixedPointy {
 			sb.Append(fraction.ToString("D6").TrimEnd('0'));
 			return sb.ToString();
 		}
-	}
+
+        public int CompareTo(object obj)
+        {
+            return _raw.CompareTo(((Fix)obj)._raw);
+        }
+    }
 }
